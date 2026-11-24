@@ -34,7 +34,7 @@ async function start() {
   const ctl = new OrbitControls(cam, canvas); ctl.target.set(...CAMS.wide.t); ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI * 0.495; ctl.minDistance = 0.35; ctl.maxDistance = 18;
   scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d1d6, 0.9));
   const sun = new THREE.DirectionalLight(0xfff6ea, 2.6); sun.position.set(-2.5, 7, 5.5); sun.target.position.set(1, 0.6, 0.6); scene.add(sun, sun.target);
-  sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); const sc = sun.shadow.camera; sc.left = -6; sc.right = 7; sc.top = 6; sc.bottom = -5; sc.near = 1; sc.far = 24; sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.015; sun.shadow.radius = 3;
+  const coarse = matchMedia('(pointer:coarse)').matches; sun.castShadow = true; sun.shadow.mapSize.set(coarse ? 2048 : 4096, coarse ? 2048 : 4096); const sc = sun.shadow.camera; sc.left = -6; sc.right = 7; sc.top = 6; sc.bottom = -5; sc.near = 1; sc.far = 24; sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.015; sun.shadow.radius = 3;
   await Promise.all(['600 20px "IBM Plex Sans"', '500 20px "IBM Plex Sans"', '500 20px "IBM Plex Mono"', '600 20px "IBM Plex Mono"'].map(f => document.fonts.load(f).catch(() => {})));
 
   const W = buildWorld(scene);
@@ -59,7 +59,7 @@ async function start() {
   }
   // camera presets with smooth transitions
   let camTw = null;
-  app.camTo = (name, dur = 1.5) => { const c = CAMS[name]; if (!c) return; app.camName = name; camTw = { t: 0, dur, p0: cam.position.clone(), t0: ctl.target.clone(), p1: new THREE.Vector3(...c.p), t1: new THREE.Vector3(...c.t) }; };
+  app.camTo = (name, dur = 1.5) => { const c = CAMS[name]; if (!c) return; app.camName = name; const t1 = new THREE.Vector3(...c.t), p1 = new THREE.Vector3(...c.p).sub(t1).multiplyScalar(app.camK || 1).add(t1); camTw = { t: 0, dur, p0: cam.position.clone(), t0: ctl.target.clone(), p1, t1 }; };
   ctl.addEventListener('start', () => { camTw = null; });
   app.person = () => safety.approach();
   app.resetStart = () => { if (safety.mode === 4) safety.pressReset(); };
@@ -97,7 +97,13 @@ async function start() {
     else if (md === 3) drawHMI(W, ['VITESSE RÉDUITE', 'Personne en zone d’avertissement', 'MODE-03', 'pièces : ' + sim.cycles], '#D18E0C');
     else drawHMI(W, ['PRODUCTION', 'Cycle automatique', 'MODE-02', 'pièces : ' + sim.cycles], '#23824F');
   }
-  const fit = () => { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.setViewOffset(w, h, 0, Math.round(h * 0.03), w, h); cam.updateProjectionMatrix(); };
+  // portrait screens (phones): wider lens and the camera pulled back so the whole cell stays in frame
+  const fit = () => {
+    const w = innerWidth, h = innerHeight, a = w / h, portrait = a < 1; renderer.setSize(w, h, false); cam.aspect = a; cam.fov = portrait ? 55 : 38;
+    const k = portrait ? Math.min(2.6, Math.max(1, 0.5 / (Math.tan(27.5 * Math.PI / 180) * a))) : 1;
+    if (k !== app.camK) { app.camK = k; ctl.maxDistance = 18 * k; scene.fog.near = 12 * k; scene.fog.far = 34 * k; if (app.camName && app.camTo) app.camTo(app.camName, 0.01); }
+    cam.setViewOffset(w, h, 0, Math.round(h * (portrait ? -0.07 : 0.03)), w, h); cam.updateProjectionMatrix();
+  };
   addEventListener('resize', fit); fit();
 
   // one simulation step of dtReal wall seconds

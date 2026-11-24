@@ -52,7 +52,7 @@ export function initUI(app) {
     for (const s of TL.segs) h += `<div class="seg ${s.type}" style="left:${pc(s.t0)}%;width:calc(${pc(s.dur)}% - 2px)">${fit(s.name, s.dur, 6.3)}</div>`;
     for (const s of TL.mach) m += `<div class="ms ${s.type}" style="left:${pc(s.t0)}%;width:calc(${pc(s.dur)}% - 2px)">${fit(s.name, s.dur, 5.6) || fit(s.name.split(' · ')[0], s.dur, 5.6)}</div>`;
     for (const r of refs) o += `<div class="ghost" style="left:${pc(TL.exStart)}%;width:${pc(r[1])}%"><span>${NAMES[r[0]]} ${fmt(r[1])} s</span></div>`;
-    o += `<div class="tick" style="left:${pc(TL.exStart + 10)}%;border-color:#23824F"><span style="color:#23824F">10 s</span></div><div class="tick" style="left:${pc(TL.exStart + 12)}%;border-color:#C0392B"><span style="color:#C0392B">12 s · opérateur</span></div><div class="head"></div>`;
+    o += `<div class="tick t10" style="left:${pc(TL.exStart + 10)}%;border-color:#23824F"><span style="color:#23824F">10 s</span></div><div class="tick" style="left:${pc(TL.exStart + 12)}%;border-color:#C0392B"><span style="color:#C0392B">12 s<b> · opérateur</b></span></div><div class="head"></div>`;
     $('ribbon').innerHTML = h; $('mrow').innerHTML = m; $('tlOver').innerHTML = o;
     segEls = [...$('ribbon').children]; mEls = [...$('mrow').children]; head = $('tlOver').querySelector('.head');
   }
@@ -82,10 +82,18 @@ export function initUI(app) {
   app.uiScenario = () => { setTxt($('sub'), SUB[app.scn]); recompute(); };
   $('uReset').onclick = () => app.resetStart();
   // the bottom panel (timeline + parameters) appears when the pointer reaches it and stays while it is being used
-  { const bot = $('bottom'); let inside = false, down = false, tmr = 0;
-    const hud = $('hud'), set = on => { bot.classList.toggle('open', on); hud.classList.toggle('open', on); }, upd = () => { clearTimeout(tmr); if (inside || down) set(true); else tmr = setTimeout(() => set(false), 450); };
-    bot.addEventListener('pointerenter', () => { inside = true; upd(); }); bot.addEventListener('pointerleave', () => { inside = false; upd(); });
-    bot.addEventListener('pointerdown', () => { down = true; upd(); }); addEventListener('pointerup', () => { down = false; upd(); }); addEventListener('pointercancel', () => { down = false; upd(); }); }
+  { const bot = $('bottom'), hud = $('hud'); let inside = false, down = false, tmr = 0, touchOpen = false;
+    const small = matchMedia('(max-width:720px), (max-height:520px) and (pointer:coarse)');
+    const set = on => { const was = bot.classList.contains('open'); bot.classList.toggle('open', on); hud.classList.toggle('open', on); if (on && !was && small.matches) ribbon(); };
+    const upd = () => { clearTimeout(tmr); if (inside || down || touchOpen) set(true); else tmr = setTimeout(() => set(false), 450); };
+    // mouse: hover. Touch has no hover: the pill at the bottom is a button, and touching the scene closes the panel.
+    bot.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; inside = true; upd(); }); bot.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; inside = false; upd(); });
+    bot.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') return; down = true; upd(); }); addEventListener('pointerup', () => { down = false; upd(); }); addEventListener('pointercancel', () => { down = false; upd(); });
+    $('hint').addEventListener('click', () => { touchOpen = !touchOpen; clearTimeout(tmr); set(touchOpen); });
+    document.getElementById('gl').addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && touchOpen) { touchOpen = false; set(false); } });
+    // on phones the objectives live inside the bottom panel
+    const place = () => { const ch = $('chips'); if (small.matches) { if (ch.parentNode !== bot) bot.insertBefore(ch, $('ctl')); } else if (ch.parentNode !== hud) { hud.insertBefore(ch, $('cmp')); touchOpen = false; } ribbon(); };
+    small.addEventListener('change', place); app.placeChips = place; }
   $('bPrev').onclick = () => app.goBeat(app.beat - 1); $('bNext').onclick = () => app.goBeat(app.beat + 1);
   const SPEEDS = [0, 0.1, 0.25, 0.5, 1, 2, 4, 8];        // 0 = pause
   app.setSpeedIdx = i => { i = Math.max(0, Math.min(SPEEDS.length - 1, i)); $('spd').value = i; app.speed = SPEEDS[i]; setTxt($('spdOut'), SPEEDS[i] === 0 ? 'pause' : '×' + fmt(SPEEDS[i], SPEEDS[i] < 1 ? (SPEEDS[i] === 0.25 ? 2 : 1) : 0)); };
@@ -99,7 +107,7 @@ export function initUI(app) {
   };
   scrub($('tl'), (x, w) => Math.max(0, x / w * BMAX));
   setTxt($('tLab'), 'Échange · porte ouverte → départ cycle');
-  app.uiScenario();
+  app.uiScenario(); app.placeChips(); addEventListener('resize', () => ribbon());
 
   const tNum = $('tNum'), tMark = $('tMark'), tRow = $('tRow'), phase = $('phase'), mode = $('mode'), modeTxt = $('modeTxt'), slowTag = $('slowTag');
   app.uiUpdate = () => {
