@@ -1,0 +1,24 @@
+<div id="hud">
+  <div id="brand"><b>CoBot-Cell</b><span id="sub"></span>
+    <div id="steps"><button class="ghost" id="bPrev" aria-label="Étape précédente">◀</button><button class="ghost" id="bNext">Étape suivante ▶</button></div>
+    <div id="beat"></div>
+  </div>
+  <div id="mode" class="m2"><i></i><b id="modeTxt">Production</b><span id="restart"><u>zone libre</u><u id="uReset">réarmer</u><u>départ</u></span></div>
+  <div id="timer"><label id="tLab"></label><div id="tRow"><span id="tNum">0,0</span><small id="tUnit">s</small><em id="tMark"></em></div><div id="phase"></div></div>
+  <div id="chips"></div>
+  <div id="cmp" hidden></div>
+  <div id="bottom">
+    <div id="ribbonBox">
+      <div id="tl" title="Cliquer ou glisser pour avancer et reculer"><div id="ribbon"></div><div id="mrow"></div><div id="tlOver"></div></div>
+    </div>
+    <div id="ctl">
+      <div class="sl"><label for="v">Vitesse du bras <output id="vOut"></output></label><div class="trk" id="vTrk"></div><input id="v" type="range" min="0.2" max="1.0" step="0.05" value="0.5"></div>
+      <div class="sl"><label for="tm">Temps d’usinage <output id="tmOut"></output></label><div class="trk" id="tmTrk"></div><input id="tm" type="range" min="4" max="9" step="0.5" value="6.5"></div>
+      <div class="sl"><label for="T">Temps d’arrêt T <output id="TOut"></output></label><div class="trk" id="TTrk"></div><input id="T" type="range" min="0.10" max="0.40" step="0.01" value="0.20"></div>
+      <div class="sl sp"><label for="spd">Vitesse de lecture <output id="spdOut"></output></label><div class="trk" id="spdTrk"><i style="width:100%;background:#C9D2D8"></i></div><input id="spd" type="range" min="0" max="7" step="1" value="6"></div>
+    </div>
+    <div id="hint">paramètres, objectifs et timeline</div>
+    <div id="foot"><span>Animation de concept · modèle de temps de notre dossier (H-18 à H-23) · ISO 13855 : S = 1600·T + 1180 mm · la géométrie de CNC-04, T et la vitesse réduite sont des hypothèses · ce n’est pas un programme robot validé</span></div>
+  </div>
+  <div id="slowTag" hidden>ralenti automatique ×<span id="slowX"></span></div>
+</div>
