@@ -16,7 +16,7 @@ export function initUI(app) {
   const X = k => total(phases(k, st.v));
   // ----- exigences (formules du dossier) -----
   const chipDefs = [['Échange', '≤ 10 s · REQ-PERF-02'], ['Plus rapide que l’opérateur', '< 12 s · NEED-02'], ['Attente machine', '≤ 5 % · REQ-PERF-03'],
-    ['Budget', '≤ 90 k€ · CST-07'], ['Amortissement', '< 24 mois · CST-08'], ['Zone de sécurité', 'face à l’allée · REQ-SAF-01']];
+    ['Budget', '≤ 90 k€ · CST-07'], ['Amortissement', '< 24 mois · CST-08'], ['Zone de sécurité', 'vs allée · REQ-SAF-01']];
   $('chips').innerHTML = chipDefs.map((c, i) => `<div class="chip" id="chip${i}"><span><b>${c[0]}</b><i>${c[1]}</i></span><em></em></div>`).join('');
   const chip = (i, s, t, sub) => { const el = $('chip' + i); setCls(el, 'chip ' + s); setTxt(el.lastChild, (s === 'ok' ? '✓ ' : s === 'bad' ? '✗ ' : s === 'warn' ? '! ' : '') + t); setTxt(el.querySelector('i'), sub || chipDefs[i][1]); };
   function board() {
@@ -38,7 +38,7 @@ export function initUI(app) {
     track('vTrk', 0.2, 1.0, v => off ? 'off' : total(phases(k, v)) <= 10 ? 'ok' : total(phases(k, v)) < 12 ? 'warn' : 'bad');
     track('tmTrk', 4, 9, tm => off ? 'off' : idle(X(k), tm) <= 0.05 ? 'ok' : 'bad');
     track('TTrk', 0.10, 0.40, T => off ? 'off' : margin(T) >= 0.1 ? 'ok' : margin(T) >= 0 ? 'warn' : 'bad');
-    for (const id of ['v', 'tm', 'T']) $(id).disabled = off;
+    for (const id of ['v', 'tm', 'T', 'bPerson', 'bEstop', 'bReset']) $(id).disabled = off;
   }
   // ----- timeline : toute la boucle (ligne du haut : bras ou opérateur ; ligne du bas : machine) -----
   let segEls = [], mEls = [], head, TL = null;
@@ -68,7 +68,7 @@ export function initUI(app) {
     h += '<div class="note">Mêmes formules que le dossier. Les valeurs suivent les curseurs.</div>';
     $('cmp').innerHTML = h;
   }
-  app.setCompare = on => { app.compare = on; $('cmp').hidden = !on; $('chips').hidden = on; if (on) cmpDraw(); };
+  app.setCompare = on => { app.compare = on; $('cmp').hidden = !on; $('chips').hidden = on; setCls($('bCmp'), 'ghost' + (on ? ' on' : '')); if (on) cmpDraw(); };
   let lastV = null, lastTm = null, lastScn = null;
   function recompute() {
     st.v = +$('v').value; st.tm = +$('tm').value; st.T = +$('T').value;
@@ -79,22 +79,40 @@ export function initUI(app) {
   }
   ['v', 'tm', 'T'].forEach(id => $(id).addEventListener('input', () => recompute(true)));
   app.setParam = (k, val) => { if (+$(k).value === +val) return; $(k).value = val; recompute(); };
-  app.uiScenario = () => { setTxt($('sub'), SUB[app.scn]); recompute(); };
+  app.uiScenario = () => { document.querySelectorAll('.scn').forEach(b => b.classList.toggle('on', b.dataset.s === app.scn)); setTxt($('sub'), SUB[app.scn]); recompute(); };
   $('uReset').onclick = () => app.resetStart();
+  // options (scenarios, safety actions, views): hidden until the Options button is clicked
+  // the options never run under the bottom panel: on a short window the list scrolls inside the card
+  const fitOpts = () => { const o = $('opts'); if (o.hidden) return; o.style.setProperty('--oh', '0px');   // measure with the list collapsed, so it cannot push the bottom panel while measuring
+    const room = innerHeight - o.getBoundingClientRect().top - $('bottom').offsetHeight - 22; o.style.setProperty('--oh', Math.max(90, room) + 'px'); };
+  app.fitOpts = fitOpts; addEventListener('resize', fitOpts);
+  const showOpts = on => { const o = $('opts'); o.hidden = !on; $('bOpts').setAttribute('aria-expanded', String(on)); if (on && app.phone && app.phone()) app.closeBottom(); fitOpts(); };
+  app.showOpts = showOpts; $('bOpts').onclick = () => showOpts($('opts').hidden);
+  document.querySelectorAll('.scn').forEach(b => b.onclick = () => { app.setCompare(false); app.setScenario(b.dataset.s); offTour(b.dataset.s); });
+  document.querySelectorAll('.cam').forEach(b => b.onclick = () => app.camTo(b.dataset.c));
+  $('bPerson').onclick = () => app.person(); $('bEstop').onclick = () => app.estop(); $('bReset').onclick = () => app.resetStart();
+  $('bCmp').onclick = () => { app.setCompare(!app.compare); offTour(app.compare ? 'cmp' : app.scn); }; $('bRestart').onclick = () => app.restart();
   // the bottom panel (timeline + parameters) appears when the pointer reaches it and stays while it is being used
   { const bot = $('bottom'), hud = $('hud'); let inside = false, down = false, tmr = 0, touchOpen = false;
     const small = matchMedia('(max-width:720px), (max-height:520px) and (pointer:coarse)');
-    const set = on => { const was = bot.classList.contains('open'); bot.classList.toggle('open', on); hud.classList.toggle('open', on); if (on && !was && small.matches) ribbon(); };
+    const set = on => { const was = bot.classList.contains('open'); bot.classList.toggle('open', on); hud.classList.toggle('open', on); if (on && !was && small.matches) { app.showOpts(false); ribbon(); } if (on !== was) { app.fitOpts(); if (app.fitChips) app.fitChips(); } };
     const upd = () => { clearTimeout(tmr); if (inside || down || touchOpen) set(true); else tmr = setTimeout(() => set(false), 450); };
     // mouse: hover. Touch has no hover: the pill at the bottom is a button, and touching the scene closes the panel.
     bot.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; inside = true; upd(); }); bot.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; inside = false; upd(); });
     bot.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') return; down = true; upd(); }); addEventListener('pointerup', () => { down = false; upd(); }); addEventListener('pointercancel', () => { down = false; upd(); });
+    // on a phone there is no room for both: the options and the bottom panel close each other
+    app.phone = () => small.matches; app.closeBottom = () => { touchOpen = false; clearTimeout(tmr); set(false); };
     $('hint').addEventListener('click', () => { touchOpen = !touchOpen; clearTimeout(tmr); set(touchOpen); });
     document.getElementById('gl').addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && touchOpen) { touchOpen = false; set(false); } });
     // on phones the objectives live inside the bottom panel
     const place = () => { const ch = $('chips'); if (small.matches) { if (ch.parentNode !== bot) bot.insertBefore(ch, $('ctl')); } else if (ch.parentNode !== hud) { hud.insertBefore(ch, $('cmp')); touchOpen = false; } ribbon(); };
-    small.addEventListener('change', place); app.placeChips = place; }
-  $('bPrev').onclick = () => app.goBeat(app.beat - 1); $('bNext').onclick = () => app.goBeat(app.beat + 1);
+    const fitChips = () => { const ch = $('chips'); if (small.matches) { ch.style.setProperty('--cs', 1); return; } const room = innerHeight - ch.offsetTop - bot.offsetHeight - 26, h = ch.offsetHeight; ch.style.setProperty('--cs', h > 0 ? Math.max(0.55, Math.min(1, room / h)).toFixed(3) : 1); };
+    app.fitChips = fitChips; addEventListener('resize', fitChips);
+    small.addEventListener('change', () => { place(); fitChips(); }); app.placeChips = () => { place(); fitChips(); }; }
+  $('bPrev').onclick = () => app.goBeat(app.beat - 1); $('bNext').onclick = () => app.goBeat(app.free ? app.beat : app.beat + 1);
+  // an option that contradicts the current tour step leaves the tour: the label says so and the main button resumes it
+  const NEXT = $('bNext').innerHTML, FREE = { today: 'Aujourd’hui : chargement manuel', single: 'Pince simple', dual: 'Pince double', cmp: 'Comparaison des trois scénarios' };
+  const offTour = k => { app.free = true; $('beat').innerHTML = `<small>Hors visite guidée</small>${FREE[k]}`; $('bNext').textContent = 'Reprendre la visite ▶'; $('bNext').disabled = false; };
   const SPEEDS = [0, 0.1, 0.25, 0.5, 1, 2, 4, 8];        // 0 = pause
   app.setSpeedIdx = i => { i = Math.max(0, Math.min(SPEEDS.length - 1, i)); $('spd').value = i; app.speed = SPEEDS[i]; setTxt($('spdOut'), SPEEDS[i] === 0 ? 'pause' : '×' + fmt(SPEEDS[i], SPEEDS[i] < 1 ? (SPEEDS[i] === 0.25 ? 2 : 1) : 0)); };
   $('spd').addEventListener('input', () => app.setSpeedIdx(+$('spd').value)); app.setSpeedIdx(6);
@@ -118,10 +136,11 @@ export function initUI(app) {
     setTxt(phase, c.phaseText);
     for (let k = 0; k < segEls.length; k++) { const s = TL.segs[k]; setCls(segEls[k], 'seg ' + s.type + (t >= s.t0 + s.dur - 1e-4 ? ' done' : t >= s.t0 ? ' cur' : '')); }
     head.style.left = Math.min(100, t / BMAX * 100) + '%';
-    const md = today ? 0 : safety.mode; setCls(mode, 'm' + md + (md === 0 && c.m.phase === 'waiting' ? ' wait' : '')); setTxt(modeTxt, md === 0 ? (c.m.phase === 'waiting' ? 'CNC-04 attend l’opérateur' : 'Chargement manuel') : md === 2 ? 'Production' : md === 3 ? 'Vitesse réduite' : 'Arrêt de protection');
+    const md = today ? 0 : safety.mode; setCls(mode, 'm' + md + (md === 0 && c.m.phase === 'waiting' ? ' wait' : '')); setTxt(modeTxt, md === 0 ? (c.m.phase === 'waiting' ? 'CNC-04 attend l’opérateur' : 'Chargement manuel') : md === 2 ? 'Production' : md === 3 ? 'Vitesse réduite' : md === 5 ? 'Arrêt d’urgence · la pince garde la pièce' : 'Arrêt de protection');
+    setTxt($('bEstop'), safety.estop ? 'Déverrouiller l’arrêt d’urgence' : 'Arrêt d’urgence'); setCls($('bEstop'), 'ghost' + (safety.estop ? ' on' : ''));
     if (md === 4) { const u = mode.querySelectorAll('u'); setCls(u[0], safety.inP ? '' : 'on'); setCls(u[1], safety.inP ? '' : 'go'); }
     const slow = app.autoSlowOn; slowTag.hidden = !slow; if (slow) setTxt($('slowX'), fmt(app.timeScale, 2));
   };
   app.uiReset = () => { $('v').value = DEFAULTS.v; $('tm').value = DEFAULTS.tm; $('T').value = DEFAULTS.T; recompute(); };
-  app.uiBeat = (i, n, name) => { $('beat').innerHTML = `<small>Visite guidée · étape ${i + 1} sur ${n}</small>${name}`; $('bPrev').disabled = i <= 0; $('bNext').disabled = i >= n - 1; };
+  app.uiBeat = (i, n, name) => { app.free = false; $('bNext').innerHTML = NEXT; $('beat').innerHTML = `<small>Visite guidée · étape ${i + 1} sur ${n}</small>${name}`; $('bPrev').disabled = i <= 0; $('bNext').disabled = i >= n - 1; };
 }

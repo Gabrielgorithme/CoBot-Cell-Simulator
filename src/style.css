@@ -105,7 +105,7 @@ button:disabled,input:disabled{opacity:.4;cursor:default}
 #cmp .note{grid-column:1/-1;font-size:12px;color:var(--muted);margin-top:4px}
 
 #chips[hidden]{display:none}
-#brand{max-width:392px}#steps{flex-wrap:wrap}#beat{max-width:none;flex:1 1 100%;margin:2px 0 0 2px}
+#brand{max-width:392px}#steps{flex-wrap:wrap}#beat{max-width:none;flex:0 0 auto;margin:2px 0 0 2px}
 #cmp{left:calc(50% + 60px);top:70px}
 
 #brand{min-width:340px;max-width:380px;gap:2px}#steps{margin-top:8px}#steps .ghost{padding:8px 14px;font-size:14px}#steps #bNext{flex:1}
@@ -127,6 +127,20 @@ button:disabled,input:disabled{opacity:.4;cursor:default}
 @media (prefers-reduced-motion:reduce){#chips{transition:none}}
 
 #foot .short{display:none}
+
+/* options: only shown after clicking the Options button */
+#brand>*{flex:0 0 auto}#brand #opts{flex:0 1 auto;min-height:0}
+#bOpts{align-self:flex-start;margin-top:8px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+#bOpts::after{content:" ▾"}#bOpts[aria-expanded=true]::after{content:" ▴"}#bOpts[aria-expanded=true]{color:var(--fg)}
+#opts{display:grid;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--line);max-height:var(--oh,none);overflow-y:auto;overscroll-behavior:contain}#opts[hidden]{display:none}
+#opts .og label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:3px}
+#opts .og>div{display:flex;flex-wrap:wrap;gap:5px}#opts .ghost{padding:4px 10px;font-size:12.5px}
+#bEstop{border-color:var(--bad);color:var(--bad)}#bEstop.on{background:var(--bad);color:#fff}
+#mode.m5{background:var(--bad);border-color:var(--bad);color:#fff}#mode.m5 i{background:#fff}#mode.m5 #restart{display:none}
+/* objectives: never taller than the room left above the bottom panel */
+#chips{transform-origin:top right;transform:scale(var(--cs,1))}
+#hud:not(.open) #chips{transform:translateX(16px) scale(var(--cs,1))}
+#chips .chip em{white-space:nowrap}
 
 /* ===================== phones (portrait, or landscape with little height). Desktop rules above are untouched. ===================== */
 @media (max-width:720px), (max-height:520px) and (pointer:coarse) {
@@ -167,4 +181,14 @@ button:disabled,input:disabled{opacity:.4;cursor:default}
   #cmp,#slowTag{grid-row:2}#cmp{justify-self:center;max-width:620px}
   #bottom{grid-row:3;max-height:72vh}
   #ctl{grid-template-columns:1fr 1fr}#chips{grid-template-columns:repeat(3,1fr)}
+}
+
+
+@media (max-width:720px), (max-height:520px) and (pointer:coarse) {
+  #opts .ghost{padding:9px 12px;font-size:13px}#bOpts{padding:7px 14px;font-size:13px}
+  #chips{transform:none!important}
+  #mode b{flex:1 1 0;min-width:0}#mode #restart{flex:1 1 100%;margin-left:0;flex-wrap:wrap;min-width:0}#mode #restart u{white-space:nowrap}
+}
+@media (max-height:520px) and (pointer:coarse) and (min-width:721px) {
+  #opts{gap:4px}#opts .ghost{padding:6px 10px;font-size:12.5px}#bOpts{padding:5px 12px;margin-top:6px}
 }

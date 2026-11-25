@@ -2,6 +2,13 @@
   <div id="brand"><b>CoBot-Cell</b><span id="sub"></span>
     <div id="steps"><button class="ghost" id="bPrev" aria-label="Étape précédente">◀</button><button class="ghost" id="bNext">Étape suivante ▶</button></div>
     <div id="beat"></div>
+    <button class="ghost" id="bOpts" aria-expanded="false" aria-controls="opts">Options</button>
+    <div id="opts" hidden>
+      <div class="og"><label>Scénario</label><div><button class="ghost scn" data-s="today">Aujourd’hui</button><button class="ghost scn" data-s="single">Pince simple</button><button class="ghost scn" data-s="dual">Pince double</button></div></div>
+      <div class="og"><label>Sécurité</label><div><button class="ghost" id="bPerson">Une personne approche</button><button class="ghost" id="bEstop">Arrêt d’urgence</button><button class="ghost" id="bReset">Réarmer + départ</button></div></div>
+      <div class="og"><label>Vue</label><div><button class="ghost cam" data-c="wide">Cellule</button><button class="ghost cam" data-c="vice">Étau</button><button class="ghost cam" data-c="top">Zones</button><button class="ghost cam" data-c="eye">Opérateur</button></div></div>
+      <div class="og"><label>Autres</label><div><button class="ghost" id="bCmp">Comparer les trois scénarios</button><button class="ghost" id="bRestart">Recommencer</button></div></div>
+    </div>
   </div>
   <div id="mode" class="m2"><i></i><b id="modeTxt">Production</b><span id="restart"><u>zone libre</u><u id="uReset">réarmer</u><u>départ</u></span></div>
   <div id="timer"><label id="tLab"></label><div id="tRow"><span id="tNum">0,0</span><small id="tUnit">s</small><em id="tMark"></em></div><div id="phase"></div></div>

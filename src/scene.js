@@ -78,7 +78,7 @@ export function buildWorld(scene) {
   cx.add(bb(0.03, 0.50, 0.016, 0.80, 0.03, 0.27, M.cabinet, 0.008), bb(0.045, 0.485, 0.05, 0.77, 0.268, 0.274, M.paint, 0.003), box(0.015, 0.10, 0.012, M.dark, 0.44, 0.45, 0.28, 0.003));
   cx.add(bb(0.225, 0.315, 0.98, 1.08, 0.0, 0.045, M.orange, 0.006), bb(0.24, 0.30, 0.96, 0.985, 0.005, 0.04, M.dark, 0.004));
   const cab = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0.27, 0.80, 0.12), new THREE.Vector3(0.27, 0.88, 0.10), new THREE.Vector3(0.27, 0.94, 0.045), new THREE.Vector3(0.27, 0.965, 0.024)]), 20, 0.014, 10), M.cable); cab.castShadow = true; cx.add(cab);
-  cx.add(cyl(0.03, 0.012, M.yellow, 0.42, 0.806, 0.20, 'y'), cyl(0.022, 0.03, M.red, 0.42, 0.82, 0.20, 'y'));   // e-stop on the cabinet
+  W.estopBtn = cyl(0.022, 0.03, M.red, 0.42, 0.82, 0.20, 'y'); cx.add(cyl(0.03, 0.012, M.yellow, 0.42, 0.806, 0.20, 'y'), W.estopBtn);   // e-stop on the cabinet
   // stack light PC-05
   cx.add(cyl(0.012, 0.55, M.steel, 0.10, 1.075, 0.15), cyl(0.034, 0.02, M.dark, 0.10, 1.36, 0.15), cyl(0.034, 0.012, M.dark, 0.10, 1.556, 0.15));
   W.stack = {};

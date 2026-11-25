@@ -43,7 +43,7 @@ export class Safety {
     this.enabled = true; this.buildFan(); this.buildFloor(); this.drawFloor(); this.buildZones(); this.buildWalkway(); this.buildMarker();
     this.setT(0.20);
   }
-  setEnabled(on) { this.enabled = on; for (const o of [this.fan, this.edge, this.hits, this.floorMesh, this.zones]) o.visible = on; if (!on) { this.marker.visible = false; if (this.op) { this.removePerson(this.op); this.op = null; } this.mode = 2; this.trip = null; this.rate = 1; this.resume = undefined; } }
+  setEnabled(on) { this.enabled = on; for (const o of [this.fan, this.edge, this.hits, this.floorMesh, this.zones]) o.visible = on; if (!on) { this.marker.visible = false; if (this.op) { this.removePerson(this.op); this.op = null; } this.mode = 2; this.trip = null; this.rate = 1; this.resume = undefined; this.estop = false; } }
   get edgeP() { return HAZ + S_of(this.T) / 1000; }
   get zOuter() { return Math.max(WALK, this.edgeP); }
   setT(T) { if (T === this.T && this._zinit) return; this._zinit = true; this.T = T; this.fanMat.uniforms.uEdge.value = this.edgeP; this.updateZones(); }
@@ -209,8 +209,16 @@ export class Safety {
     }
   }
   removePerson(p) { p.g.removeFromParent(); const i = this.people.indexOf(p); if (i >= 0) this.people.splice(i, 1); }
-  clearPeople() { for (const p of [...this.people]) this.removePerson(p); this.op = null; this.pendingOp = false; this.claim = null; }
+  clearPeople() { for (const p of [...this.people]) this.removePerson(p); this.op = null; this.pendingOp = false; this.claim = null; this.estop = false; }
   // ---------- modes ----------
+  // MODE-05: immediate stop, the gripper keeps holding the part. Unlocking the button does not restart the cell:
+  // it leaves a latched stop that still needs reset + start.
+  estopToggle() {
+    if (!this.enabled) return;
+    if (!this.estop) { this.estop = true; this.mode = 5; this.rate = 0; this.trip = null; this.resume = undefined; }
+    else { this.estop = false; this.mode = 4; this.trip = { t: this.T + 1, rate0: 0, stopped: true, who: null, x: 0, z: 0 }; }
+  }
+  estopClear() { if (!this.estop) return; this.estop = false; this.mode = 2; this.trip = null; this.rate = 1; this.resume = undefined; }
   pressReset() { if (this.mode !== 4) return false; if (this.inP) { this.events.push({ type: 'resetRefused' }); return false; } this.mode = 2; this.trip = null; this.resume = 0; this.events.push({ type: 'reset' }); return true; }
   update(dt) {
     this.time += dt;
@@ -226,7 +234,8 @@ export class Safety {
       if (c[0] > X0 - LEG_R && c[0] < X1 + LEG_R && c[1] > HAZ - LEG_R) { if (c[1] - LEG_R < eP) { inP = true; who = who || p; } else if (c[1] - LEG_R < zO) inW = true; }
     }
     this.inP = inP; this.inW = inW;
-    if (this.mode !== 4) {
+    if (this.estop) { this.mode = 5; this.rate = 0; }
+    else if (this.mode !== 4) {
       if (inP) { this.mode = 4; this.trip = { t: 0, rate0: this.rate, x: who.x, z: who.z, who }; this.stops++; this.events.push({ type: 'trip', who: who.kind }); }
       else { this.mode = inW ? 3 : 2; if (this.resume !== undefined) { this.resume += dt; this.rate = Math.min(1, this.resume / 0.6); if (this.rate >= 1) this.resume = undefined; } else this.rate = 1; }
     }
@@ -241,7 +250,8 @@ export class Safety {
     this.updateFan();
     // stack light + reset lamp
     const st = this.W.stack, on = (m, v) => { m.emissiveIntensity = v; };
-    const md = this.lightMode || this.mode; on(st.green, md === 2 ? 1.6 : 0.02); on(st.amber, md === 3 ? 1.8 : 0.02); on(st.red, md === 4 ? 1.9 : 0.02);
+    const md = this.lightMode || this.mode; on(st.green, md === 2 ? 1.6 : 0.02); on(st.amber, md === 3 ? 1.8 : 0.02); on(st.red, md === 4 ? 1.9 : md === 5 ? (Math.sin(this.time * 9) > 0 ? 2.2 : 0.15) : 0.02);
+    if (this.W.estopBtn) this.W.estopBtn.position.y = this.estop ? 0.812 : 0.82;
     this.W.resetMat.emissiveIntensity = this.mode === 4 && !inP ? 0.9 + 0.9 * Math.sin(this.time * 8) : 0;
   }
 }

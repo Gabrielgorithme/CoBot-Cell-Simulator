@@ -16,6 +16,7 @@ Le fichier `index.html` est autonome : il s'ouvre aussi directement depuis le di
 ## Utilisation
 
 - La visite guidée (en haut à gauche) déroule les dix étapes.
+- Le bouton « Options » de la même carte ouvre les accès directs : scénario (aujourd'hui, pince simple, pince double), une personne approche, arrêt d'urgence (MODE-05), réarmement, vues, comparaison, recommencer. Un choix qui sort de la visite l'indique, et « Reprendre la visite » y revient.
 - En bas de l'écran, au survol : la timeline (cliquer ou glisser pour avancer et reculer), les curseurs et les objectifs.
 - La souris fait tourner et zoomer la vue.
 

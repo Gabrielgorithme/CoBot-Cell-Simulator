@@ -63,7 +63,7 @@ async function start() {
   ctl.addEventListener('start', () => { camTw = null; });
   app.person = () => safety.approach();
   app.resetStart = () => { if (safety.mode === 4) safety.pressReset(); };
-  app.eye = CAMS.eye;
+  app.estop = () => safety.estopToggle();
   app.setScenario = (k, force) => {
     if (k === app.scn && app.started && !force) return; app.started = true; app.scn = k; const robotOn = k !== 'today';
     robot.root.visible = robotOn; W.cellOnly.visible = robotOn; W.post.visible = robotOn; trail.visible = robotOn; safety.setEnabled(robotOn);
@@ -72,7 +72,7 @@ async function start() {
   };
   app.resetAll = () => { safety.clearPeople(); safety.mode = 2; safety.trip = null; safety.rate = 1; if (app.scn === 'today') today.reset(); else sim.reset(); app.uiReset(); pushTrail(0, true); };
   initUI(app); app.started = true;
-  // director mode: beats stepped with a presentation clicker (PageDown / PageUp / arrows / space) or keys
+  // guided tour: ten steps, driven by the two buttons of the CoBot-Cell card
   const rampT = to => { if (Math.abs(to - safety.T) < 1e-6) { app.tRamp = null; return; } app.tRamp = { to, from: safety.T, t: 0 }; };
   const BEATS = [
     { name: 'Aujourd’hui : la machine attend', run: () => { app.setScenario('today'); app.camTo('wide'); } },
@@ -87,13 +87,16 @@ async function start() {
     { name: 'Comparaison des exigences', cmp: true, run: () => { rampT(0.20); app.setScenario('dual'); app.camTo('wide'); app.resetStart(); } },
   ];
   app.beat = -1;
-  app.goBeat = i => { i = Math.max(0, Math.min(BEATS.length - 1, i)); app.beat = i; app.setCompare(!!BEATS[i].cmp); BEATS[i].run(); app.uiBeat(i, BEATS.length, BEATS[i].name); };
+  app.goBeat = i => { i = Math.max(0, Math.min(BEATS.length - 1, i)); app.beat = i; safety.estopClear();   // a tour step sets its own state: an emergency stop left on from the options must not block it
+    app.setCompare(!!BEATS[i].cmp); BEATS[i].run(); app.uiBeat(i, BEATS.length, BEATS[i].name); };
+  app.restart = () => { app.setCompare(false); app.resetAll(); app.setSpeedIdx(6); app.goBeat(0); };
   // on opening: guided tour at step 1, playback at x4
   app.setSpeedIdx(6); app.goBeat(0);
   const hmiState = { k: '' };
   function hmi() {
     const md = safety.mode, k = md + '|' + sim.cycles + '|' + (safety.inP ? 1 : 0); if (k === hmiState.k) return; hmiState.k = k;
-    if (md === 4) drawHMI(W, ['ARRÊT DE PROTECTION', safety.inP ? 'Personne dans la zone' : 'Zone libre : réarmer', 'MODE-04', 'pièces : ' + sim.cycles], '#C0392B');
+    if (md === 5) drawHMI(W, ['ARRÊT D’URGENCE', 'La pince garde la pièce', 'MODE-05', 'pièces : ' + sim.cycles], '#C0392B');
+    else if (md === 4) drawHMI(W, ['ARRÊT DE PROTECTION', safety.inP ? 'Personne dans la zone' : 'Zone libre : réarmer', 'MODE-04', 'pièces : ' + sim.cycles], '#C0392B');
     else if (md === 3) drawHMI(W, ['VITESSE RÉDUITE', 'Personne en zone d’avertissement', 'MODE-03', 'pièces : ' + sim.cycles], '#D18E0C');
     else drawHMI(W, ['PRODUCTION', 'Cycle automatique', 'MODE-02', 'pièces : ' + sim.cycles], '#23824F');
   }
