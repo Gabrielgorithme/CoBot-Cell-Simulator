@@ -142,6 +142,16 @@ button:disabled,input:disabled{opacity:.4;cursor:default}
 #hud:not(.open) #chips{transform:translateX(16px) scale(var(--cs,1))}
 #chips .chip em{white-space:nowrap}
 
+/* about us: always visible at the foot of the CoBot-Cell card */
+#about{margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
+#about label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:3px}
+#about>div{display:flex;flex-wrap:wrap;gap:1px 12px;font-size:12.5px;line-height:1.5}
+#about a{color:var(--fg);font-weight:600;white-space:nowrap;text-decoration:underline;text-decoration-color:#B9C4CC;text-underline-offset:3px}
+#about a:hover,#about a:focus-visible{color:var(--steel);text-decoration-color:currentColor}
+#about small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+/* on a short window the open options take its place, so nothing has to scroll */
+@media (max-height:800px){#opts:not([hidden])~#about{display:none}}
+
 /* ===================== phones (portrait, or landscape with little height). Desktop rules above are untouched. ===================== */
 @media (max-width:720px), (max-height:520px) and (pointer:coarse) {
   #hud{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;padding-bottom:max(8px,env(safe-area-inset-bottom));padding-top:max(8px,env(safe-area-inset-top))}
@@ -191,4 +201,7 @@ button:disabled,input:disabled{opacity:.4;cursor:default}
 }
 @media (max-height:520px) and (pointer:coarse) and (min-width:721px) {
   #opts{gap:4px}#opts .ghost{padding:6px 10px;font-size:12.5px}#bOpts{padding:5px 12px;margin-top:6px}
+}
+@media (max-width:720px), (max-height:520px) and (pointer:coarse) {
+  #opts:not([hidden])~#about,#hud.open #about{display:none}#about>div{font-size:13px;gap:4px 14px}   /* on a phone the open panel needs the room */
 }

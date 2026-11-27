@@ -84,7 +84,7 @@ export function initUI(app) {
   // options (scenarios, safety actions, views): hidden until the Options button is clicked
   // the options never run under the bottom panel: on a short window the list scrolls inside the card
   const fitOpts = () => { const o = $('opts'); if (o.hidden) return; o.style.setProperty('--oh', '0px');   // measure with the list collapsed, so it cannot push the bottom panel while measuring
-    const room = innerHeight - o.getBoundingClientRect().top - $('bottom').offsetHeight - 22; o.style.setProperty('--oh', Math.max(90, room) + 'px'); };
+    const ab = $('about').offsetHeight, room = innerHeight - o.getBoundingClientRect().top - $('bottom').offsetHeight - 22 - (ab ? ab + 9 : 0); o.style.setProperty('--oh', Math.max(90, room) + 'px'); };
   app.fitOpts = fitOpts; addEventListener('resize', fitOpts);
   const showOpts = on => { const o = $('opts'); o.hidden = !on; $('bOpts').setAttribute('aria-expanded', String(on)); if (on && app.phone && app.phone()) app.closeBottom(); fitOpts(); };
   app.showOpts = showOpts; $('bOpts').onclick = () => showOpts($('opts').hidden);

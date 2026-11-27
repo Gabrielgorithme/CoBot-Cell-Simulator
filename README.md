@@ -43,3 +43,13 @@ npm run reach     # vérifie que le bras atteint toutes les poses du cycle
 
 - Bras UR16e : maillages et paramètres cinématiques de [Universal_Robots_ROS2_Description](https://github.com/UniversalRobots/Universal_Robots_ROS2_Description), licence BSD-3-Clause (texte dans `licenses/`). Le UR16e est le candidat documenté dans le dossier, pas un achat.
 - three.js (MIT), polices IBM Plex (SIL OFL 1.1).
+
+## Équipe 605 (ESILV)
+
+- [Lilian Jaouen](https://www.linkedin.com/in/lilian-jaouen)
+- [Othman Kharroubi](https://www.linkedin.com/in/othman-k-7ab775295)
+- [Nicolas Le Bris](https://www.linkedin.com/in/nicolas-le-bris-3302a22ab)
+- [Arsene Maitre](https://www.linkedin.com/in/arsene-maitre)
+- [Timothée Mariotte](https://www.linkedin.com/in/timothee-mariotte)
+- [Youssouf Yiagnigni Touondounko](https://www.linkedin.com/in/youssouf-yiagnigni-touondounko-81490329b)
+- [Gabriel Ghanem](https://www.linkedin.com/in/gabriel-ghanem-02528a208)
